@@ -3,10 +3,84 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>v-cube — Canadian Astronomy Data Centre cube visualization</title>
+    <title>v-cube — FITS spectral-cube viewer | Canadian Astronomy Data Centre</title>
+    <meta
+      name="description"
+      content="Free browser-based FITS spectral-cube viewer for astronomy: linked 2D slice and 3D volume rendering, trustworthy WCS readouts, and publication-quality figure export. Runs entirely in your browser — no upload."
+    />
+    <meta name="author" content="Serhii Zautkin" />
+    <meta name="theme-color" content="#04070c" />
+    <link rel="canonical" href="https://v-cube.starai.ca/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph / social link previews -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="v-cube" />
+    <meta property="og:url" content="https://v-cube.starai.ca/" />
+    <meta property="og:title" content="v-cube — FITS spectral-cube viewer" />
+    <meta
+      property="og:description"
+      content="Browser-based FITS spectral-cube viewer: linked 2D slice and 3D volume rendering, WCS readouts, and publication figure export. Runs locally — no upload."
+    />
+    <meta property="og:image" content="https://v-cube.starai.ca/og-image.png" />
+    <meta property="og:image:width" content="1864" />
+    <meta property="og:image:height" content="896" />
+    <meta
+      property="og:image:alt"
+      content="v-cube rendering a spectral cube in volume mode within a spacecraft-style cockpit interface"
+    />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="v-cube — FITS spectral-cube viewer" />
+    <meta
+      name="twitter:description"
+      content="Browser-based FITS spectral-cube viewer with linked slice and volume modes and publication export. Runs locally — no upload."
+    />
+    <meta name="twitter:image" content="https://v-cube.starai.ca/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "v-cube",
+        "applicationCategory": "ScientificApplication",
+        "operatingSystem": "Web browser (WebGL2)",
+        "url": "https://v-cube.starai.ca/",
+        "description": "A browser-based FITS spectral-cube viewer for astronomy with linked 2D slice and 3D volume rendering, WCS readouts, and publication-quality figure export.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+        "author": { "@type": "Person", "name": "Serhii Zautkin" },
+        "softwareHelp": "https://github.com/szautkin/v-cube#readme"
+      }
+    </script>
+
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
+    <noscript>
+      <div
+        style="
+          max-width: 640px;
+          margin: 12vh auto;
+          padding: 0 24px;
+          font-family: system-ui, sans-serif;
+          color: #d7f0ff;
+          background: #04070c;
+        "
+      >
+        <h1>v-cube — FITS spectral-cube viewer</h1>
+        <p>
+          v-cube is a free, browser-based viewer for FITS astronomical spectral cubes, with linked 2D slice and 3D
+          volume rendering, world-coordinate (WCS) readouts, and publication-quality figure export. It runs entirely in
+          your browser — your data never leaves your machine.
+        </p>
+        <p>
+          It requires JavaScript and a WebGL2-capable browser. Source and documentation:
+          <a href="https://github.com/szautkin/v-cube">github.com/szautkin/v-cube</a>.
+        </p>
+      </div>
+    </noscript>
     <div id="app">
       <header id="topbar">
         <div class="brand">◈ V·CUBE<span class="brand-sub">NAV</span></div>
