@@ -2,5 +2,7 @@ dist
 node_modules
 data_cubes
 docs/images
+public
+scripts
 package-lock.json
 *.fits

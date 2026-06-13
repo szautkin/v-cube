@@ -11,6 +11,7 @@ docs/REMOTE-CADC-PLAN.md
 
 # local dev scratch — scripts hardcoded to local data paths
 scripts/drive-*.mjs
+scripts/make-hero-images.mjs
 scripts/verify-parser.ts
 
 # OS / editor noise
