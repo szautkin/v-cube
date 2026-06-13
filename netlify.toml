@@ -1,0 +1,9 @@
+# Netlify build configuration — auto-deploys on every push to main.
+# `npm run build` type-checks (tsc --noEmit) then emits the static site to dist/.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Match the CI toolchain (Vite 6 / ESLint 10 need a modern Node).
+  NODE_VERSION = "22"
