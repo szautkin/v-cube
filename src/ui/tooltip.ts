@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * HUD tooltips — one delegated listener; any element with data-tip gets a
  * cockpit-styled tooltip after a short hover dwell. Native title attributes

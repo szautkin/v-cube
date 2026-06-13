@@ -60,7 +60,6 @@ behaviour you touched.
 - New source files carry the SPDX header:
   ```ts
   // SPDX-License-Identifier: AGPL-3.0-or-later
-  // Copyright (C) <year> <you> and v-cube contributors
   ```
 
 ## Commit & PR

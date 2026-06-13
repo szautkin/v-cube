@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * Minimal FITS reader covering this project's corpus: multi-HDU image
  * extensions (BITPIX 8/16/32/-32/-64, BSCALE/BZERO/BLANK), big-endian

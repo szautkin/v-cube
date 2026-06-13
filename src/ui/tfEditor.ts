@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * Transfer-function editor — draggable opacity control points over the
  * active colormap gradient. Drag to move, double-click to add/remove.

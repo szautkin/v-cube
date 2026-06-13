@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * Random-access byte sources for FITS data. File-backed sources let us read
  * single channel planes from multi-GB cubes without ever holding the whole

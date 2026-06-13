@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * Just enough WCS for trustworthy readouts on this corpus:
  *  - celestial: TAN (gnomonic) via CD / PC*CDELT / CDELT matrix (SIP ignored)

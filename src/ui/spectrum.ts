@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /** Probe spectrum strip — flux vs channel for the pinned voxel, HUD-styled. */
 export class SpectrumPlot {
   private ctx: CanvasRenderingContext2D;

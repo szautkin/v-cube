@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * Publication export — renders the active view off-screen at an integer
  * multiple of the viewport (full quality, fixed jitter), then composes a

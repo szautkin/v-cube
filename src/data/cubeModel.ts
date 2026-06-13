@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * CubeModel — owns one loaded cube: header info, NaN-aware statistics,
  * channel-plane access (full-RAM for small cubes, LRU streamed for big),

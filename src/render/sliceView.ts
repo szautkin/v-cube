@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 /**
  * Slice mode — one native-resolution channel plane on an orthographic quad.
  * The texture is R32F + NEAREST so every screen pixel is a true voxel value;

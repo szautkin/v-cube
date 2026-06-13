@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (C) 2026 Serhii Zautkin and v-cube contributors
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — plain ESM fixture shared with the playwright harness
 import { gradientCube, gradientValue, makeFitsCube } from '../scripts/lib/fitsFixture.mjs';
