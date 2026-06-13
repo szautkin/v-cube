@@ -94,6 +94,16 @@ size. It has been exercised against JCMT ACSIS, JWST NIRSpec & MIRI MRS IFU `s3d
 DRAO Faraday-depth cubes, and Galactic-plane survey cubes. HDF5 is intentionally **not**
 supported — convert to FITS first (e.g. SITELLE products).
 
+## Privacy
+
+**Your science data never leaves your machine.** FITS cubes are read locally in the browser via
+the File API — they are not uploaded to any server, and the app needs no backend.
+
+The hosted demo at [v-cube.starai.ca](https://v-cube.starai.ca/) loads Google Analytics (GA4) to
+count anonymous page visits. This measures site traffic only — never your data or files. To run
+v-cube with **no** analytics, self-host or run locally and remove the `gtag.js` snippet from
+`index.html`; the app behaves identically without it.
+
 ## Using it well
 
 The intended workflow is **volume to find, slice to read**:
