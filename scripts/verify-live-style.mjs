@@ -1,0 +1,41 @@
+import { writeFileSync } from 'node:fs';
+import { chromium } from 'playwright';
+import { gradientCube } from './lib/fitsFixture.mjs';
+writeFileSync('/tmp/cadc-cube-fixture.fits', gradientCube());
+const browser = await chromium.launch({ args: ['--no-sandbox'] });
+const page = await (await browser.newContext({ viewport: { width: 1680, height: 1000 } })).newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push(String(e)));
+await page.goto('http://localhost:5180', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(1800);
+await page.setInputFiles('#fileInput', '/tmp/cadc-cube-fixture.fits');
+await page.waitForFunction(() => document.getElementById('chanReadout')?.textContent?.includes('/8'), null, { timeout: 60000 });
+await page.click('#modeSwitch button[data-mode="volume"]');
+await page.waitForTimeout(1200);
+const styleOf = () => page.$eval('.axis-cap', (el) => {
+  const s = getComputedStyle(el);
+  return { family: s.fontFamily, weight: s.fontWeight, size: s.fontSize, color: s.color };
+});
+console.log('default:', await styleOf());
+// change style via modal: serif + bold + amber + 1.3×
+await page.click('#styleBtn');
+await page.click('#styleFamily button[data-v="serif"]');
+await page.click('#styleWeight button[data-v="700"]');
+await page.click('#styleColor .color-swatch[data-v="#ffb454"]');
+await page.$eval('#styleScale', (el) => { el.value = '130'; el.dispatchEvent(new Event('input')); });
+await page.click('#styleClose');
+await page.waitForTimeout(400);
+const after = await styleOf();
+console.log('after:  ', after);
+const ok = after.family.includes('Georgia') && after.weight === '700' && after.size === '13px' && after.color === 'rgb(255, 180, 84)';
+console.log(ok ? '✓ live captions follow export style' : '✗ FAIL: live captions did not update');
+await page.screenshot({ path: '/tmp/cadc-cube-shots/live-style.png' });
+// reset to defaults
+await page.click('#styleBtn');
+await page.click('#styleFamily button[data-v="mono"]');
+await page.click('#styleWeight button[data-v="500"]');
+await page.click('#styleColor .color-swatch[data-v="auto"]');
+await page.$eval('#styleScale', (el) => { el.value = '100'; el.dispatchEvent(new Event('input')); });
+console.log('errors:', errors.length ? errors : 'none');
+process.exitCode = ok ? 0 : 1;
+await browser.close();

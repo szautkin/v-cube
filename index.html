@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>v-cube — Canadian Astronomy Data Centre cube visualization</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <div class="brand">◈ V·CUBE<span class="brand-sub">NAV</span></div>
+        <div class="file-info">
+          <span id="objName" class="value glow">NO TARGET</span>
+          <span id="instrName" class="dim"></span>
+        </div>
+        <nav class="mode-switch" id="modeSwitch">
+          <button
+            data-mode="slice"
+            class="active"
+            data-tip="Quantitative view — every pixel is the true voxel value, streamed at native resolution. Use it for anything you write down."
+          >
+            SLICE
+          </button>
+          <button
+            data-mode="volume"
+            data-tip="Qualitative view — raymarched overview to locate structure. Binned + quantized: never measure flux or size from it."
+          >
+            VOLUME
+          </button>
+        </nav>
+        <div class="sys">
+          <button id="guideBtn" class="hud-btn small" data-tip="Operating guide — workflow, trust contract, keys (G)">
+            GUIDE
+          </button>
+          <span id="gpuInfo">GPU —</span>
+          <span id="texInfo" data-tip="WebGL2 3D-texture ceiling, and the current volume texture dimensions/size"
+            >TEX —</span
+          >
+          <span id="fpsInfo" data-tip="Render rate. STBY = idle — the view renders on demand to save power">— FPS</span>
+        </div>
+      </header>
+
+      <aside id="left">
+        <section class="panel">
+          <h2>DATA LINK</h2>
+          <button
+            id="dropzone"
+            data-tip="Click to browse, or drop a FITS file anywhere in the window. Any size — files stream from disk with byte-range reads, so multi-GB cubes open without loading into RAM. Nothing leaves your machine. HDF5 is not supported — convert to FITS first."
+          >
+            <span class="dz-icon">⬡</span>
+            <span>DROP FITS CUBE <span class="dim">/ BROWSE</span></span>
+          </button>
+          <div class="dz-note">FITS 3-AXIS CUBES · INT/FLOAT · ANY SIZE</div>
+          <input id="fileInput" type="file" accept=".fits,.fit,.fts" hidden />
+          <div class="sub-label" id="samplesLabel" hidden>SAMPLE FEEDS</div>
+          <ul id="samples" class="sample-list"></ul>
+        </section>
+        <section class="panel">
+          <h2>CUBE</h2>
+          <dl id="cubeInfo" class="kv">
+            <div data-tip="Spatial × spatial × spectral size of the science HDU">
+              <dt>DIMS</dt>
+              <dd id="ciDims">—</dd>
+            </div>
+            <div data-tip="BUNIT — physical units of every voxel value">
+              <dt>UNIT</dt>
+              <dd id="ciUnit">—</dd>
+            </div>
+            <div
+              data-tip="Shared normalization anchors (0.1–99.9 percentile, NaN-aware). Both modes map values inside this range"
+            >
+              <dt>RANGE</dt>
+              <dd id="ciRange">—</dd>
+            </div>
+            <div data-tip="Blank voxels (NaN) — masked dark in slice mode, fully transparent in volume mode">
+              <dt>NAN</dt>
+              <dd id="ciNan">—</dd>
+            </div>
+            <div
+              data-tip="RESIDENT = whole cube held in RAM · STREAMED = channels read from disk on demand (spectrum probe disabled)"
+            >
+              <dt>MODE</dt>
+              <dd id="ciMem">—</dd>
+            </div>
+          </dl>
+        </section>
+        <section class="panel">
+          <h2>PROBE</h2>
+          <dl class="kv probe">
+            <div
+              data-tip="Sky longitude — RA (sexagesimal) or Galactic ℓ (degrees), per the cube's frame. SIP distortion ignored — arcsec-level error at wide-field edges"
+            >
+              <dt id="prLonLabel">RA</dt>
+              <dd id="prRa" class="glow">—</dd>
+            </div>
+            <div data-tip="Sky latitude — Dec or Galactic b, per the cube's frame">
+              <dt id="prLatLabel">DEC</dt>
+              <dd id="prDec" class="glow">—</dd>
+            </div>
+            <div
+              data-tip="Spectral coordinate of the current channel (frequency, wavelength or velocity, from the cube's WCS)"
+            >
+              <dt>SPEC</dt>
+              <dd id="prSpec" class="glow">—</dd>
+            </div>
+            <div data-tip="True voxel value from the file in native units — not the rendered color">
+              <dt>FLUX</dt>
+              <dd id="prFlux" class="glow amber">—</dd>
+            </div>
+            <div data-tip="Voxel indices: x, y, channel (0-based)">
+              <dt>PX</dt>
+              <dd id="prPx" class="dim">—</dd>
+            </div>
+          </dl>
+        </section>
+        <section class="panel grow">
+          <h2>SPECTRUM <span id="spectrumHint" class="dim small">click image to pin probe</span></h2>
+          <canvas
+            id="spectrum"
+            data-tip="Flux vs channel through the pinned spaxel — click any pixel in slice mode to pin. Amber line = current channel. Look here for line profiles, double peaks, absorption."
+          ></canvas>
+        </section>
+      </aside>
+
+      <main id="viewport">
+        <canvas id="gl"></canvas>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div id="standby">
+          <div class="standby-grid"></div>
+          <div class="standby-text">AWAITING DATA LINK</div>
+          <div class="dim small">drop a FITS cube or select a sample feed</div>
+        </div>
+        <div id="readoutChip" hidden></div>
+        <div id="progressWrap" hidden>
+          <div id="progressLabel">ACQUIRING</div>
+          <div id="progressBar"><div id="progressFill"></div></div>
+        </div>
+        <div id="helpChip" data-tip="Keyboard reference">? KEYS</div>
+        <div id="helpPanel" hidden>
+          <b>←/→</b> channel &nbsp; <b>⇧←/→</b> ×10 &nbsp; <b>SPACE</b> play &nbsp; <b>V</b> mode &nbsp; <b>G</b> guide
+          &nbsp; <b>R</b> reset view &nbsp; <b>dbl-click</b> fit
+        </div>
+      </main>
+
+      <aside id="right">
+        <section class="panel">
+          <h2>DISPLAY</h2>
+          <div class="ctl-label">COLORMAP</div>
+          <div id="cmapRow" class="swatch-row"></div>
+          <div class="ctl-label">STRETCH</div>
+          <div id="stretchRow" class="btn-row"></div>
+          <div class="ctl-label">
+            <span
+              data-tip="Black/white points within the normalized range — shared by both modes so they always agree. Tune once in slice mode on a strong channel; volume inherits it."
+              >WINDOW</span
+            >
+            <span id="winReadout" class="dim"></span>
+          </div>
+          <input
+            id="winLo"
+            type="range"
+            min="0"
+            max="1000"
+            value="0"
+            data-tip="Black point — values below this render at the colormap floor"
+          />
+          <input
+            id="winHi"
+            type="range"
+            min="0"
+            max="1000"
+            value="1000"
+            data-tip="White point — values above this saturate"
+          />
+        </section>
+        <section class="panel" id="volPanel">
+          <h2>VOLUME ENGINE</h2>
+          <div class="ctl-label">RENDER MODE</div>
+          <div class="btn-row">
+            <button
+              id="volComposite"
+              class="hud-btn small active"
+              data-tip="Emission rendering — translucent front-to-back accumulation, like glowing gas. The communication view."
+            >
+              EMISSION
+            </button>
+            <button
+              id="volMip"
+              class="hud-btn small"
+              data-tip="Maximum-intensity projection — brightest voxel along each ray. Best for faint point sources and spotting bad pixels."
+            >
+              MAX-INT
+            </button>
+          </div>
+          <div class="ctl-label">
+            <span data-tip="Opacity multiplier for emission mode — raise to make faint structure denser">DENSITY</span>
+            <span id="densReadout" class="dim">1.0</span>
+          </div>
+          <input id="density" type="range" min="5" max="400" value="100" />
+          <div class="ctl-label">
+            <span
+              data-tip="Depth of the spectral axis. Spatial and spectral units aren't commensurate, so this is a free choice — stretch it to exaggerate velocity structure"
+              >SPECTRAL DEPTH</span
+            >
+            <span id="zscaleReadout" class="dim">1.5</span>
+          </div>
+          <input id="zscale" type="range" min="25" max="400" value="150" />
+          <div class="ctl-label">
+            <span
+              data-tip="Ray-march step count — higher is sharper but slower. Drops automatically while you orbit, refines when you stop"
+              >QUALITY</span
+            >
+            <span id="stepsReadout" class="dim">384</span>
+          </div>
+          <input id="steps" type="range" min="96" max="768" value="384" />
+          <label
+            class="check"
+            data-tip="Draw the current slice channel as a plane inside the volume — links the two views spatially"
+          >
+            <input id="showPlane" type="checkbox" checked /> SLICE PLANE MARKER</label
+          >
+          <label
+            class="check"
+            data-tip="After the idle delay with no input, the cube slowly orbits — any interaction stops it instantly"
+          >
+            <input id="autoOrbit" type="checkbox" checked /> IDLE AUTO-ORBIT</label
+          >
+          <div class="ctl-label">
+            <span data-tip="How long with no mouse/keyboard input before the idle orbit engages">IDLE DELAY</span>
+            <span id="orbitDelayReadout" class="dim">2.0 min</span>
+          </div>
+          <input id="orbitDelay" type="range" min="30" max="300" step="15" value="120" />
+          <div class="ctl-label">
+            <span
+              data-tip="Opacity vs value. Drag points · press on empty curve to add · double-click a point to remove. Defaults to transparent below the cube's median (the noise floor)"
+              >TRANSFER FUNCTION</span
+            >
+          </div>
+          <canvas id="tfCanvas"></canvas>
+        </section>
+        <section class="panel">
+          <h2>EXPORT</h2>
+          <div class="btn-row">
+            <button
+              id="exportPng2"
+              class="hud-btn small"
+              data-tip="Render the current view off-screen at 2× resolution, full ray quality, and save as PNG"
+            >
+              PNG 2×
+            </button>
+            <button id="exportPng4" class="hud-btn small" data-tip="4× resolution — publication figures and posters">
+              PNG 4×
+            </button>
+          </div>
+          <button
+            id="plateBtn"
+            class="hud-btn small wide"
+            data-tip="Compose the full figure plate — cockpit frame, corner brackets, header with filename, legend with axis ranges and colorbar. Preview first, then PNG or print-to-PDF."
+          >
+            ◈ FIGURE PLATE…
+          </button>
+          <div class="export-row">
+            <div>
+              <label
+                class="check"
+                data-tip="Burn in the figure annotations: target, spectral coordinate, labeled colorbar with stretch and units, and (in volume mode) the axis captions"
+              >
+                <input id="exportAnnotate" type="checkbox" checked /> FIGURE ANNOTATIONS</label
+              >
+              <label
+                class="check"
+                data-tip="Alpha-true PNG for compositing onto slides and papers — the background becomes transparent instead of cockpit black. The annotation bar, if enabled, stays opaque for legibility."
+              >
+                <input id="exportTransparent" type="checkbox" /> TRANSPARENT BG</label
+              >
+            </div>
+            <button
+              id="styleBtn"
+              class="hud-btn small"
+              data-tip="Figure typography — theme presets (cockpit dark / journal light), font family, weight, size, accent. Applies to exports only; the live HUD stays itself."
+            >
+              ⚙ STYLE
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <footer id="bottombar">
+        <button id="playBtn" class="hud-btn round" data-tip="Auto-scrub through channels (SPACE)">▶</button>
+        <div id="scrubWrap">
+          <div
+            id="scrubTrack"
+            data-tip="Channel scrubber — the waveform is the cube-mean spectrum, so emission lines are visible at a glance. Drag onto one to jump there."
+          >
+            <div id="scrubFill"></div>
+            <canvas id="scrubProfile"></canvas>
+            <div id="scrubHandle"></div>
+          </div>
+          <div id="axisLabel" class="dim small">CHANNEL</div>
+        </div>
+        <div class="readout-block" data-tip="Current channel and its spectral coordinate">
+          <div id="chanReadout" class="glow">CH —</div>
+          <div id="specReadout" class="dim">—</div>
+        </div>
+      </footer>
+    </div>
+
+    <div id="guide" hidden>
+      <div id="guideCard">
+        <header>
+          <span class="g-title">◈ OPERATING GUIDE</span>
+          <button id="guideClose" class="hud-btn small">CLOSE ✕</button>
+        </header>
+        <div class="g-body">
+          <h3>THE CORE LOOP — VOLUME TO FIND · SLICE TO READ</h3>
+          <ol>
+            <li>
+              <b>ORIENT</b> — open VOLUME mode (<b>V</b>). Anything glowing is candidate signal: the default transfer
+              function already cuts at the noise floor. Use <b>MAX-INT</b> to find faint point sources; stretch
+              <b>SPECTRAL DEPTH</b> to exaggerate velocity structure — a tilted or twisted feature along the spectral
+              axis means rotation or outflow.
+            </li>
+            <li>
+              <b>LOCK</b> — click a feature. The ray is marched through the cube, the brightest channel along it is
+              locked, and you land in SLICE mode at that channel.
+            </li>
+            <li>
+              <b>READ</b> — hover anywhere: α, δ, wavelength/frequency, velocity and flux are the true file values, not
+              rendered colors. Scrub <b>←/→</b> to walk the line profile channel by channel.
+            </li>
+            <li>
+              <b>PROBE</b> — click a pixel to pin a spectrum through that spaxel. The waveform behind the scrubber is
+              the cube-mean spectrum — jump straight to the lines.
+            </li>
+          </ol>
+
+          <h3>TRUST CONTRACT</h3>
+          <p>
+            <b class="ok-text">SLICE IS QUANTITATIVE</b> — native-resolution float values streamed from the file. Use it
+            for anything you'd write down.
+          </p>
+          <p>
+            <b class="warn-text">VOLUME IS QUALITATIVE</b> — spatially/spectrally binned, half-float quantized, and
+            shaped by your transfer function. Never estimate a flux or a size from it; it exists to tell you where to
+            point the slice view (and to make the screenshot for your talk).
+          </p>
+          <p class="dim">
+            Both modes share one normalization and stretch — bright agrees with bright; only slice mode says how bright.
+          </p>
+
+          <h3>USE IT FOR / NOT FOR</h3>
+          <div class="g-cols">
+            <ul class="g-yes">
+              <li>triage — "is there anything in this cube?"</li>
+              <li>finding line channels before deeper analysis</li>
+              <li>data-quality checks (NaN borders, bad pixels via MAX-INT)</li>
+              <li>velocity structure, demos, teaching</li>
+            </ul>
+            <ul class="g-no">
+              <li>publication photometry</li>
+              <li>moment maps & spectral fitting</li>
+              <li>arcsecond astrometry on wide fields (SIP ignored)</li>
+              <li>anything measured off the volume render</li>
+            </ul>
+          </div>
+
+          <h3>WORKFLOW TIP</h3>
+          <p>
+            Tune <b>WINDOW</b> + <b>STRETCH</b> once in slice mode on a strong channel (ASINH for faint extended
+            emission · LOG for high dynamic range). Volume mode inherits the same scaling — then shape only the
+            <b>TRANSFER FUNCTION</b> for the volume look.
+          </p>
+
+          <h3>KEYS</h3>
+          <p class="dim">
+            <b>←/→</b> channel · <b>⇧←/→</b> ×10 · <b>SPACE</b> play · <b>V</b> mode · <b>G</b> guide · <b>R</b> reset
+            view · <b>double-click</b> fit · <b>wheel</b> zoom · <b>drag</b> pan/orbit
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="plateModal" hidden>
+      <div id="plateCard">
+        <header>
+          <span class="g-title">◈ FIGURE PLATE</span>
+          <span class="btn-row">
+            <button id="platePng2" class="hud-btn small" data-tip="Export the plate at 2× resolution">PNG 2×</button>
+            <button id="platePng4" class="hud-btn small" data-tip="4× — posters and print">PNG 4×</button>
+            <button
+              id="platePrint"
+              class="hud-btn small"
+              data-tip="System print dialog — choose 'Save as PDF' for a PDF plate"
+            >
+              PRINT / PDF
+            </button>
+            <button id="plateClose" class="hud-btn small">CLOSE ✕</button>
+          </span>
+        </header>
+        <div class="m-body">
+          <canvas id="plateCanvas"></canvas>
+          <div class="dim small plate-note">
+            preview is the exact composition — PNG renders it at full resolution · style follows ⚙ STYLE
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="styleModal" hidden>
+      <div id="styleCard">
+        <header>
+          <span class="g-title">◈ EXPORT STYLE</span>
+          <span class="btn-row">
+            <button
+              id="styleReset"
+              class="hud-btn small"
+              data-tip="Restore the default style — cockpit dark, mono, medium, 1.00×, auto accent, 1.0 px edges"
+            >
+              RESET
+            </button>
+            <button id="styleClose" class="hud-btn small">CLOSE ✕</button>
+          </span>
+        </header>
+        <div class="m-body">
+          <div class="ctl-label">THEME</div>
+          <div class="btn-row pick-row" id="styleTheme">
+            <button class="hud-btn small" data-v="cockpit">COCKPIT DARK</button>
+            <button class="hud-btn small" data-v="journal">JOURNAL LIGHT</button>
+          </div>
+          <div class="ctl-label">FONT FAMILY</div>
+          <div class="btn-row pick-row" id="styleFamily">
+            <button class="hud-btn small" data-v="mono">MONO</button>
+            <button class="hud-btn small" data-v="sans">SANS</button>
+            <button class="hud-btn small" data-v="serif">SERIF</button>
+          </div>
+          <div class="ctl-label">WEIGHT</div>
+          <div class="btn-row pick-row" id="styleWeight">
+            <button class="hud-btn small" data-v="400">REGULAR</button>
+            <button class="hud-btn small" data-v="500">MEDIUM</button>
+            <button class="hud-btn small" data-v="700">BOLD</button>
+          </div>
+          <div class="ctl-label">TEXT SIZE <span id="styleScaleReadout" class="dim">1.00×</span></div>
+          <input id="styleScale" type="range" min="75" max="150" value="100" />
+          <div class="ctl-label">BOX EDGES <span id="styleEdgeReadout" class="dim">1.0 px</span></div>
+          <input
+            id="styleEdge"
+            type="range"
+            min="50"
+            max="400"
+            value="100"
+            data-tip="Thickness of the volume wireframe and slice-plane edges — live and in exports"
+          />
+          <div class="ctl-label">ACCENT <span class="dim">auto follows theme · tints captions and edges</span></div>
+          <div class="swatch-row" id="styleColor">
+            <div class="swatch color-swatch auto" data-v="auto">AUTO</div>
+            <div class="swatch color-swatch" data-v="#56c8ff" style="background: #56c8ff"></div>
+            <div class="swatch color-swatch" data-v="#d7f0ff" style="background: #d7f0ff"></div>
+            <div class="swatch color-swatch" data-v="#ffb454" style="background: #ffb454"></div>
+            <div class="swatch color-swatch" data-v="#14181c" style="background: #14181c"></div>
+          </div>
+          <div class="ctl-label">PREVIEW — ANNOTATION BAR</div>
+          <canvas id="stylePreview"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div id="boot">
+      <div id="bootLines"></div>
+    </div>
+    <div id="toasts"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "label": "JCMT · CO line cube",
+    "sz": "110 MB",
+    "url": "/data_cubes/JCMT/jcmth20260604_00047_06_reduced001_obs_000.fits",
+    "tip": "61×61×3872 — high-resolution spectral line cube. One compact emission source in a noise sea: try the volume view first."
+  },
+  {
+    "label": "JWST MIRI MRS · IFU",
+    "sz": "130 MB",
+    "url": "/data_cubes/JWST/product/jw01023011001_02101_00003_mirifushort_s3d.fits",
+    "tip": "43×45×4404 — table-based wavelengths (WAVE-TAB), ~58% NaN border. Good NaN-handling showcase."
+  },
+  {
+    "label": "JWST NIRSpec · IFU",
+    "sz": "37 MB",
+    "url": "/data_cubes/JWST 3/product/jw01409133001_02101_00001_nrs1_s3d.fits",
+    "tip": "51×49×972 — compact target, fastest sample. Pin a spectrum and scrub the emission lines."
+  },
+  {
+    "label": "JWST NIRSpec · lamp cal",
+    "sz": "61 MB",
+    "url": "/data_cubes/JWST 2/product/jw01132002001_02128_00001_nrs1_s3d.fits",
+    "tip": "30×37×3610 — internal lamp exposure with no sky WCS: probe falls back to pixel coordinates."
+  }
+]

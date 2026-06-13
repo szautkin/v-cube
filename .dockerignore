@@ -1,0 +1,6 @@
+node_modules
+dist
+data_cubes
+docs
+.git
+.DS_Store

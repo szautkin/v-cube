@@ -1,0 +1,6 @@
+dist
+node_modules
+data_cubes
+docs/images
+package-lock.json
+*.fits

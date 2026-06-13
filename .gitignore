@@ -1,0 +1,18 @@
+# dependencies / build
+node_modules/
+dist/
+.vite/
+
+# data — multi-GB local test cubes, never tracked
+data_cubes/
+
+# internal planning notes (kept out of the repo history by request)
+docs/REMOTE-CADC-PLAN.md
+
+# local dev scratch — scripts hardcoded to local data paths
+scripts/drive-*.mjs
+scripts/verify-parser.ts
+
+# OS / editor noise
+.DS_Store
+*.log
