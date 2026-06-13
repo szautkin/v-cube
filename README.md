@@ -6,6 +6,9 @@ high-resolution spacecraft-navigation cockpit. Everything runs client-side: cube
 from disk with byte-range reads, so multi-gigabyte cubes open without loading into RAM, and
 no data ever leaves your machine.
 
+**▶ Live demo: https://celebrated-starburst-9b5e76.netlify.app/** — open it and drop in your own FITS cube (nothing is uploaded; it's read locally in your browser).
+
+[![Live demo](https://img.shields.io/badge/live_demo-online-69f0ae.svg)](https://celebrated-starburst-9b5e76.netlify.app/)
 [![CI](https://github.com/szautkin/v-cube/actions/workflows/ci.yml/badge.svg)](https://github.com/szautkin/v-cube/actions/workflows/ci.yml)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
@@ -61,6 +64,9 @@ in one is bright in the other — but only slice mode tells you _how_ bright.
   and renders at reduced resolution while you interact, refining when you stop.
 
 ## Quick start
+
+The easiest way to try it is the **[live demo](https://celebrated-starburst-9b5e76.netlify.app/)** —
+just drop in a FITS cube. To run it locally:
 
 ```bash
 git clone https://github.com/szautkin/v-cube.git
